@@ -11,3 +11,5 @@ This is useful for me with folders of shortcuts on my desktop, I can right click
 working to expand the functionality to include the icons of the files as well as configuration options for setting the types of files to include in the list.
 
 as well as options for setting the number of files displayed.
+
+and error trapping and logging.
