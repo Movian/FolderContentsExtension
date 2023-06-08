@@ -41,30 +41,29 @@ namespace FolderContentsExtension
                     var fileMenuItem = new ToolStripMenuItem(Path.GetFileName(file));
 
                     // Get the file icon and set it as the menu item's image
-                    IntPtr hIcon = GetFileIcon(file);
-                    if (hIcon != IntPtr.Zero)
+                    Icon fileIcon = Shellicon.GetLargeIcon(file);
+                    if(fileIcon == null)
                     {
-                        try
+                        fileIcon = Shellicon.GetSmallIcon(file);
+                    }
+                    try
+                    {
+                        // Check if the icon has a valid image
+                        if (fileIcon?.Size.Width > 0 && fileIcon?.Size.Height > 0)
                         {
-                            Icon fileIcon = Icon.FromHandle(hIcon);
-
-                            // Check if the icon has a valid image
-                            if (fileIcon?.Size.Width > 0 && fileIcon?.Size.Height > 0)
-                            {
-                                fileMenuItem.Image = fileIcon.ToBitmap();
-                            }
-                            else
-                            {
-                                // Fallback to a default icon
-                                fileMenuItem.Image = SystemIcons.Application.ToBitmap();
-                            }
+                            fileMenuItem.Image = fileIcon.ToBitmap();
                         }
-                        finally
+                        else
                         {
-                            // Release the icon handle
-                            DestroyIcon(hIcon);
+                            fileMenuItem.Image = SystemIcons.Application.ToBitmap();
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        // Log the exception
+                        LogError($"Error opening file: {file}", ex);
+                    }
+
 
                     fileMenuItem.Click += (sender, e) =>
                     {
@@ -97,6 +96,14 @@ namespace FolderContentsExtension
             return menu;
         }
 
+        private void LogImageSize(Icon FileIcon)
+        {
+            string logFilePath = @"C:\Temp\FolderContentsExtension_ErrorLog.txt";
+            string logMessage = $"{DateTime.Now}: Width: {FileIcon?.Size.Width}\nHeight: {FileIcon?.Size.Height}\n\n";
+            File.AppendAllText(logFilePath, logMessage);
+        }
+
+
         private List<string> GetFilesInFolder()
         {
             // Implement the logic to retrieve the list of files in the folder
@@ -112,37 +119,12 @@ namespace FolderContentsExtension
 
             // Write the log message to a file
             File.AppendAllText(logFilePath, logMessage);
-
-            // Alternatively, you can output the log message to the console
-            Console.WriteLine(logMessage);
         }
 
-        private const uint SHGFI_ICON = 0x100;
-        private const uint SHGFI_SMALLICON = 0x1;
-
-        [DllImport("shell32.dll")]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFileInfo psfi, uint cbSizeFileInfo, uint uFlags);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern bool DestroyIcon(IntPtr handle);
 
-        private static IntPtr GetFileIcon(string filePath)
-        {
-            SHFileInfo shinfo = new SHFileInfo();
-            IntPtr hIcon = SHGetFileInfo(filePath, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON);
-            return hIcon;
-        }
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct SHFileInfo
-        {
-            public IntPtr hIcon;
-            public int iIcon;
-            public uint dwAttributes;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-            public string szTypeName;
-        }
     }
 }
