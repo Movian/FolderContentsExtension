@@ -35,35 +35,35 @@ namespace FolderContentsExtension
 
             foreach (string file in files)
             {
+                Icon fileIcon;
+                Image UseIcon;
                 try
                 {
-                    // Create a context menu item for each file
-                    var fileMenuItem = new ToolStripMenuItem(Path.GetFileName(file));
+
 
                     // Get the file icon and set it as the menu item's image
-                    Icon fileIcon = Shellicon.GetLargeIcon(file);
+                    fileIcon = Shellicon.GetLargeIcon(file);
                     if(fileIcon == null)
                     {
                         fileIcon = Shellicon.GetSmallIcon(file);
                     }
-                    try
+
+                    // Check if the icon has a valid image
+                    if (fileIcon?.Size.Width > 0 && fileIcon?.Size.Height > 0)
                     {
-                        // Check if the icon has a valid image
-                        if (fileIcon?.Size.Width > 0 && fileIcon?.Size.Height > 0)
-                        {
-                            fileMenuItem.Image = fileIcon.ToBitmap();
-                        }
-                        else
-                        {
-                            fileMenuItem.Image = SystemIcons.Application.ToBitmap();
-                        }
+                        UseIcon = fileIcon.ToBitmap();
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        // Log the exception
-                        LogError($"Error opening file: {file}", ex);
+                        UseIcon = SystemIcons.Application.ToBitmap();
                     }
 
+                    // Create a context menu item for each file
+                    var fileMenuItem = new ToolStripMenuItem
+                    {
+                        Image = UseIcon,
+                        Text = "     - " + Path.GetFileName(file)
+                    };
 
                     fileMenuItem.Click += (sender, e) =>
                     {
